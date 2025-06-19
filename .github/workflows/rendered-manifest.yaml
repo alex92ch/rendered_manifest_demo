@@ -14,6 +14,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - uses: fregante/setup-git-user@v2
       - name: Render manifests
         run: |
           kustomize build ${{ matrix.env }}/grafana --enable-helm > /tmp/all.yaml
