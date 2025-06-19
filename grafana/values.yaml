@@ -1,0 +1,112 @@
+sidecar:
+  dashboards:
+    enabled: true
+    SCProvider: true
+    label: grafana_dashboard
+    labelValue: "1"
+    provider:
+      name: sidecarProvider
+      orgid: 1
+      folder: "Provisioned"
+      type: file
+      disableDelete: false
+      allowUiUpdates: true
+
+service:
+  enabled: true
+  # annotations:
+  #   teleport.dev/app-rewrite: |
+  #     headers:
+  #     - name: "Host"
+  #       value: "grafana-monitoring-aws-mgmt-eks.teleport.cr1.fnva.ch"
+  #     - name: "Origin"
+  #       value: "https://grafana-monitoring-aws-mgmt-eks.teleport.cr1.fnva.ch"
+rbac:
+  create: true
+  namespaced: true
+persistence:
+  type: pvc
+  enabled: true
+  storageClassName: efs-grafana
+  accessModes:
+  - ReadWriteOnce
+  size: 10Gi
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: mimir
+      type: prometheus
+      access: proxy
+      url: http://mimir-query-frontend.monitoring.svc.cluster.local:8080/prometheus
+      isDefault: true
+      editable: true
+      jsonData:
+        httpHeaderName1: "X-Scope-OrgID"
+      secureJsonData:
+        httpHeaderValue1: "default"
+    - name: loki
+      type: loki
+      access: proxy
+      url: http://loki-gateway.monitoring.svc.cluster.local
+      editable: true
+      jsonData:
+        httpHeaderName1: "X-Scope-OrgID"
+        derivedFields:
+        - name: trace_id
+          matcherRegex: 'trace_id=(\w{16,})'
+          url: '${__value.raw}'
+          datasourceUid: tempo
+      secureJsonData:
+        httpHeaderValue1: "default"
+    - name: tempo
+      type: tempo
+      access: proxy
+      url: http://tempo-query-frontend.monitoring.svc.cluster.local:3200
+      editable: true
+      jsonData:
+        httpHeaderName1: "X-Scope-OrgID"
+        nodeGraph:
+          enabled: true
+        search:
+          hide: false
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: "1m"
+          spanEndTimeShift: "1m"
+          tags:
+          - key: "trace_id"
+          filterByTraceID: true
+          filterBySpanID: false
+          customQuery: true
+        lokiSearch:
+          datasourceUid: loki
+      secureJsonData:
+        httpHeaderValue1: "default"
+
+grafana.ini:
+  paths:
+    data: /var/lib/grafana/
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+    provisioning: /etc/grafana/provisioning
+  analytics:
+    check_for_updates: true
+  log:
+    mode: console
+  grafana_net:
+    url: https://grafana.net
+  server:
+    domain: "{{ if (and .Values.ingress.enabled .Values.ingress.hosts) }}{{ tpl (.Values.ingress.hosts | first) . }}{{ else }}''{{ end }}"
+    root_url: https://grafana-monitoring-aws-mgmt-eks.teleport.cr1.fnva.ch
+    serve_from_sub_path: true
+  security:
+    allow_embedding: true
+    cookie_secure: true
+    cookie_samesite: none
+  # live:
+  #   allowed_origins: "https://*.teleport.cr1.fnva.ch"
+
+initChownData:
+  enabled: false

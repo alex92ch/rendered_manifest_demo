@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: cr1-mgmt-cluster
+  annotations:
+    internal.kpt.dev/upstream-identifier: 'argoproj.io|AppProject|default|ReplaceMe'
+spec:
+  sourceRepos:
+  - https://github.com/alex92ch/test.git
+  - https://argoproj.github.io/argo-helm
+  - https://charts.jetstack.io
+  - https://kubernetes-sigs.github.io/metrics-server
+  - https://charts.external-secrets.io/
+  - https://vmware-tanzu.github.io/helm-charts
+  - https://charts.crossplane.io/stable
+  - https://aws.github.io/eks-charts
+  - https://kubernetes-sigs.github.io/aws-efs-csi-driver
+  - https://charts.releases.teleport.dev
+  - https://grafana.github.io/helm-charts
+  destinations:
+  - namespace: '*'
+    server: 'https://kubernetes.default.svc'
+  clusterResourceWhitelist:
+  - group: '*'
+    kind: '*'
+  orphanedResources:
+    warn: false
+    ignore:
+    # AWS Loadbalancer
+    - group: elbv2.k8s.aws
+      kind: TargetGroupBinding
