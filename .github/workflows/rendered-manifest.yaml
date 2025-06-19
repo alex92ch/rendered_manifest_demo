@@ -16,14 +16,14 @@ jobs:
       - uses: actions/checkout@v3
       - name: Render manifests
         run: |
-          kustomize build grafana/${{ matrix.env }} > /tmp/all.yaml
-          if ! git checkout grafana/${{ matrix.env }} -- ; then
-            git checkout --orphan grafana/${{ matrix.env }}
+          kustomize build ${{ matrix.env }}/grafana > /tmp/all.yaml
+          if ! git checkout ${{ matrix.env }}/grafana -- ; then
+            git checkout --orphan ${{ matrix.env }}/grafana
             git rm -rf .
             cp /tmp/all.yaml .
             git add .
             git commit -m "${{ github.event.head_commit.message }}"
-            git push --set-upstream origin grafana/${{ matrix.env }}
+            git push --set-upstream origin ${{ matrix.env }}/grafana
           else
             cp /tmp/all.yaml .
           fi
@@ -32,5 +32,5 @@ jobs:
           if ! git diff --quiet HEAD ; then 
             git add .
             git commit -m "${{ github.event.head_commit.message }}"
-            git push --set-upstream origin grafana/${{ matrix.env }}
+            git push --set-upstream origin ${{ matrix.env }}/grafana
           fi
