@@ -24,13 +24,6 @@ service:
 rbac:
   create: true
   namespaced: true
-persistence:
-  type: pvc
-  enabled: true
-  storageClassName: efs-grafana
-  accessModes:
-  - ReadWriteOnce
-  size: 10Gi
 
 datasources:
   datasources.yaml:
