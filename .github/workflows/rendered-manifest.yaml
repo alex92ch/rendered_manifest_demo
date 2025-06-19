@@ -29,24 +29,25 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.DEPLOY_PAT }}@github.com/${{ github.repository }}
 
-      - name: Render manifests and push to PR branch
+        - name: Render manifests and push to PR branch
         run: |
           BASE_BRANCH="${{ matrix.env }}/grafana"
-          PR_BRANCH="rendered/${BASE_BRANCH}-$(date +%s)"
-
-          # Render
-          kustomize build ${{ matrix.env }}/grafana --enable-helm > /tmp/all.yaml
-
-          # Create temp PR branch
-          git checkout -b "$PR_BRANCH"
-
-          cp /tmp/all.yaml all.yaml
+          PR_BRANCH="rendered-${{ matrix.env }}-grafana-$(date +%s)"
+      
+          # Fetch the base branch and create PR branch from it
+          git fetch origin "$BASE_BRANCH"
+          git checkout -b "$PR_BRANCH" "origin/$BASE_BRANCH"
+      
+          # Render YAML
+          kustomize build ${{ matrix.env }}/grafana --enable-helm > all.yaml
+      
           git add all.yaml
           git commit -m "Rendered manifests for $BASE_BRANCH"
           git push origin "$PR_BRANCH"
-
+      
           echo "pr_branch=$PR_BRANCH" >> $GITHUB_ENV
           echo "base_branch=$BASE_BRANCH" >> $GITHUB_ENV
+        
 
       - name: Create Pull Request
         env:
