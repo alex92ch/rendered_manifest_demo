@@ -7,7 +7,7 @@ spec:
   project: cr1-mgmt-cluster
   source:
     repoURL: "https://github.com/alex92ch/rendered_manifest_demo.git"
-    targetRevision: "main"
+    targetRevision: '{{ "{{" }}path{{ "}}" }}'
     path: "./grafana"
   destination:
     server: "https://kubernetes.default.svc"
