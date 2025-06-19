@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        env: [dev, stage, prod]
+        env: [int, tst, prd]
 
     steps:
       - uses: actions/checkout@v3
