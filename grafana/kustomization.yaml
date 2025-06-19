@@ -5,6 +5,7 @@ helmCharts:
   repo: https://grafana.github.io/helm-charts
   version: 9.0.0
   valuesFile: values.yaml
+  releaseName: grafana
   # valuesInline:                   # Used to override values for the helm chart for specific environments
   # valuesMerge:                    # Used to define the merge strategy for the values - defaults to overwrite
 resources:                          # List of additional resources to be created
