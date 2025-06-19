@@ -6,7 +6,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: "https://github.com/alex92ch/test.git"
+    repoURL: "hhttps://github.com/alex92ch/rendered_manifest_demo.git"
     targetRevision: "main"
     path: "./"
     directory:

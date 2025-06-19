@@ -6,7 +6,7 @@ metadata:
     internal.kpt.dev/upstream-identifier: 'argoproj.io|AppProject|default|ReplaceMe'
 spec:
   sourceRepos:
-  - https://github.com/alex92ch/test.git
+  - https://github.com/alex92ch/rendered_manifest_demo.git
   - https://argoproj.github.io/argo-helm
   - https://charts.jetstack.io
   - https://kubernetes-sigs.github.io/metrics-server
