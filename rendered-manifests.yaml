@@ -34,16 +34,7 @@ metadata:
     helm.sh/chart: grafana-9.0.0
   name: grafana
   namespace: default
-rules:
-- apiGroups:
-  - ""
-  resources:
-  - configmaps
-  - secrets
-  verbs:
-  - get
-  - watch
-  - list
+rules: []
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -145,32 +136,6 @@ metadata:
     app.kubernetes.io/version: 12.0.0
     helm.sh/chart: grafana-9.0.0
   name: grafana
-  namespace: default
----
-apiVersion: v1
-data:
-  provider.yaml: |-
-    apiVersion: 1
-    providers:
-      - name: 'sidecarProvider'
-        orgId: 1
-        folder: 'Provisioned'
-        folderUid: ''
-        type: file
-        disableDeletion: false
-        allowUiUpdates: true
-        updateIntervalSeconds: 30
-        options:
-          foldersFromFilesStructure: false
-          path: /tmp/dashboards
-kind: ConfigMap
-metadata:
-  labels:
-    app.kubernetes.io/instance: grafana
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/version: 12.0.0
-    helm.sh/chart: grafana-9.0.0
-  name: grafana-config-dashboards
   namespace: default
 ---
 apiVersion: v1
@@ -388,7 +353,7 @@ metadata:
 ---
 apiVersion: v1
 data:
-  admin-password: aGNXRXRScFJUVFp4NXE0RG1KeVlFUnV3YWg1c1ZYbFB2OXE0ekhjVA==
+  admin-password: eTRpYzNIVnN3elBkMno5b1VPU01hVEVxdURvQjd0VFV1Z2t2RFFyTA==
   admin-user: YWRtaW4=
   ldap-toml: ""
 kind: Secret
@@ -447,7 +412,7 @@ spec:
       annotations:
         checksum/config: 0cf56fff04f61a22bba49989249f63edb338254c067076b4d22848e2a43a0db8
         checksum/sc-dashboard-provider-config: 05412da4ec48730ad234acb0ec35e19c81b3b70394878f59bf410a408a26a827
-        checksum/secret: 92e45cdc65cc664acbba77196840622c065fc0f4061722178acd57dae937fede
+        checksum/secret: cc18699fb9dff07ceed9e9f009a2d99bdeddceb6120b4f819184b0cf8514765e
         kubectl.kubernetes.io/default-container: grafana
       labels:
         app.kubernetes.io/instance: grafana
@@ -457,44 +422,6 @@ spec:
     spec:
       automountServiceAccountToken: true
       containers:
-      - env:
-        - name: METHOD
-          value: WATCH
-        - name: LABEL
-          value: grafana_dashboard
-        - name: LABEL_VALUE
-          value: "1"
-        - name: FOLDER
-          value: /tmp/dashboards
-        - name: RESOURCE
-          value: both
-        - name: REQ_USERNAME
-          valueFrom:
-            secretKeyRef:
-              key: admin-user
-              name: grafana
-        - name: REQ_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: admin-password
-              name: grafana
-        - name: REQ_URL
-          value: http://localhost:3000/api/admin/provisioning/dashboards/reload
-        - name: REQ_METHOD
-          value: POST
-        image: quay.io/kiwigrid/k8s-sidecar:1.30.0
-        imagePullPolicy: IfNotPresent
-        name: grafana-sc-dashboard
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-          seccompProfile:
-            type: RuntimeDefault
-        volumeMounts:
-        - mountPath: /tmp/dashboards
-          name: sc-dashboard-volume
       - env:
         - name: POD_IP
           valueFrom:
@@ -561,11 +488,6 @@ spec:
         - mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
           name: config
           subPath: datasources.yaml
-        - mountPath: /tmp/dashboards
-          name: sc-dashboard-volume
-        - mountPath: /etc/grafana/provisioning/dashboards/sc-dashboardproviders.yaml
-          name: sc-dashboard-provider
-          subPath: provider.yaml
       enableServiceLinks: true
       securityContext:
         fsGroup: 472
@@ -580,11 +502,6 @@ spec:
         name: config
       - emptyDir: {}
         name: storage
-      - emptyDir: {}
-        name: sc-dashboard-volume
-      - configMap:
-          name: grafana-config-dashboards
-        name: sc-dashboard-provider
 ---
 apiVersion: v1
 kind: Pod
