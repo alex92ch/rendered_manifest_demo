@@ -23,7 +23,7 @@ jobs:
         run: |
           LIVE_BRANCH="live-${{ matrix.env }}/grafana"
           if ! git ls-remote --heads origin $LIVE_BRANCH | grep -q $LIVE_BRANCH; then
-            git checkout --orphan $LIVE_BRANCH
+            git checkout $LIVE_BRANCH
             git rm -rf . || true
             echo "# Live manifests for ${{ matrix.env }}/grafana" > README.md
             git add README.md
