@@ -21,30 +21,30 @@ jobs:
 
       - name: Check for live branch
         run: |
-          LIVE_BRANCH="live-${{ matrix.env }}/grafana"
+          LIVE_BRANCH="live/${{ matrix.env }}"
           if ! git ls-remote --heads origin $LIVE_BRANCH | grep -q $LIVE_BRANCH; then
             git checkout --orphan $LIVE_BRANCH
             git rm -rf .
-            echo "# Live manifests for ${{ matrix.env }}/grafana" > README.md
+            echo "# Live manifests for ${{ matrix.env }}" > README.md
             git add README.md
-            git commit -m "Initialize live branch for ${{ matrix.env }}/grafana"
+            git commit -m "Initialize live branch for ${{ matrix.env }}"
             git push --set-upstream origin $LIVE_BRANCH
           fi
           echo "LIVE_BRANCH=$LIVE_BRANCH" >> $GITHUB_ENV
 
       - name: Render manifests
         run: |
-          PREVIEW_BRANCH="preview-${{ matrix.env }}/grafana-${GITHUB_RUN_NUMBER}"
+          PREVIEW_BRANCH="preview/${{ matrix.env }}-${GITHUB_RUN_NUMBER}"
 
           git fetch origin $LIVE_BRANCH
           git checkout -b "$PREVIEW_BRANCH" origin/"$LIVE_BRANCH"
 
           git worktree add ../main-worktree origin/main
-          kustomize build ../main-worktree/${{ matrix.env }}/grafana --enable-helm > rendered-manifests.yaml
+          kustomize build ../main-worktree/${{ matrix.env }}/grafana --enable-helm > rendered-manifests.yaml #TODO Render manifests for each application
           git worktree remove ../main-worktree --force
 
           git add rendered-manifests.yaml
-          git commit -m "Render manifests for ${{ matrix.env }}/grafana"
+          git commit -m "Render manifests for ${{ matrix.env }}/grafana" #TODO Render manifests for each application
           git push --set-upstream origin $PREVIEW_BRANCH
           echo "PREVIEW_BRANCH=$PREVIEW_BRANCH" >> $GITHUB_ENV
 
@@ -52,10 +52,10 @@ jobs:
         run: |
           if ! git diff --quiet origin/$LIVE_BRANCH..HEAD ; then 
             gh pr create \
-              --title "Update ${{ matrix.env }}/grafana manifests" \
+              --title "Update live/${{ matrix.env }} manifests" \
               --body "**Automated manifest update**
               
-              This PR contains rendered manifests for ${{ matrix.env }}/grafana environment.
+              This PR contains rendered manifests for ${{ matrix.env }} environment.
               
               **Source commit:** ${{ github.sha }}
               **Commit message:** ${{ github.event.head_commit.message }}
@@ -64,7 +64,7 @@ jobs:
               --base $LIVE_BRANCH \
               --head $PREVIEW_BRANCH
           else
-            echo "No changes detected for ${{ matrix.env }}/grafana"
+            echo "No changes detected for live/${{ matrix.env }}"
             # Clean up review branch if no changes
             git push origin --delete $PREVIEW_BRANCH || true
           fi

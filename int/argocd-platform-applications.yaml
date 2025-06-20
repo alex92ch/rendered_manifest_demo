@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: "https://github.com/alex92ch/rendered_manifest_demo.git"
-    targetRevision: "main"
+    targetRevision: "live/int"
     path: "./"
     directory:
       recurse: true
