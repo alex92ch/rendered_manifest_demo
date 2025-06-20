@@ -50,7 +50,7 @@ jobs:
 
       - name: Create PR
         run: |
-          if ! git diff --quiet HEAD ; then 
+          if ! git diff --quiet origin/$LIVE_BRANCH..HEAD ; then 
             gh pr create \
               --title "Update ${{ matrix.env }}/grafana manifests" \
               --body "**Automated manifest update**
@@ -66,7 +66,7 @@ jobs:
           else
             echo "No changes detected for ${{ matrix.env }}/grafana"
             # Clean up review branch if no changes
-            git push origin --delete $PREVIEW_BRANCH
+            git push origin --delete $PREVIEW_BRANCH || true
           fi
 
         env:
