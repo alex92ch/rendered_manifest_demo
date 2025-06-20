@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: grafana
+  namespace: argocd
+spec:
+  project: cr1-mgmt-cluster
+  source:
+    repoURL: "https://github.com/alex92ch/rendered_manifest_demo.git"
+    targetRevision: "live/prd"
+    path: "."
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
