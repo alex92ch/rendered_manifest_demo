@@ -7,8 +7,8 @@ spec:
   project: cr1-mgmt-cluster
   source:
     repoURL: "https://github.com/alex92ch/rendered_manifest_demo.git"
-    targetRevision: '{{ "{{" }}path{{ "}}" }}'
-    path: "./grafana"
+    targetRevision: "int/grafana"
+    path: "."
   destination:
     server: "https://kubernetes.default.svc"
     namespace: monitoring
