@@ -36,7 +36,6 @@ jobs:
         run: |
           PREVIEW_BRANCH="preview-${{ matrix.env }}/grafana-${GITHUB_RUN_NUMBER}"
 
-          git fetch origin $LIVE_BRANCH
           git checkout -b "$PREVIEW_BRANCH" "$LIVE_BRANCH"
 
           git worktree add ../main-worktree origin/main
