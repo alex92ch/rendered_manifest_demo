@@ -22,7 +22,7 @@ service:
   #     - name: "Origin"
   #       value: "https://grafana-monitoring-aws-mgmt-eks.teleport.cr1.fnva.ch"
 rbac:
-  create: true
+  create: false
   namespaced: true
 
 datasources:
