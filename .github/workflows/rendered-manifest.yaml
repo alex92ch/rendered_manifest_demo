@@ -50,19 +50,22 @@ jobs:
 
       - name: Create PR
         run: |
-
-          gh pr create \
-            --title "Update ${{ matrix.env }}/grafana manifests" \
-            --body "**Automated manifest update**
-            
-            This PR contains rendered manifests for ${{ matrix.env }}/grafana environment.
-            
-            **Source commit:** ${{ github.sha }}
-            **Commit message:** ${{ github.event.head_commit.message }}
-            
-            Please review the changes before merging to deploy to the live environment." \
-            --base $LIVE_BRANCH \
-            --head $PREVIEW_BRANCH \
-
+          if ! git diff --quiet HEAD ; then 
+            gh pr create \
+              --title "Update ${{ matrix.env }}/grafana manifests" \
+              --body "**Automated manifest update**
+              
+              This PR contains rendered manifests for ${{ matrix.env }}/grafana environment.
+              
+              **Source commit:** ${{ github.sha }}
+              **Commit message:** ${{ github.event.head_commit.message }}
+              
+              Please review the changes before merging to deploy to the live environment." \
+              --base $LIVE_BRANCH \
+              --head $PREVIEW_BRANCH
+          else
+            echo "No changes detected for ${{ matrix.env }}/grafana"
+            # Clean up review branch if no changes
+            git push origin --delete $REVIEW_BRANCH || true
         env:
           GH_TOKEN: ${{ secrets.DEPLOY_PAT }}
