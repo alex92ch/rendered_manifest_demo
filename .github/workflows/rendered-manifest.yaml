@@ -40,11 +40,16 @@ jobs:
           git checkout -b "$PREVIEW_BRANCH" origin/"$LIVE_BRANCH"
 
           git worktree add ../main-worktree origin/main
-          kustomize build ../main-worktree/${{ matrix.env }}/grafana --enable-helm > rendered-manifests.yaml #TODO Render manifests for each application
+          for dir in ./main-worktree/${{ matrix.env }}/*/; do
+            app_name=$(basename "$dir")
+            mkdir -p "$dir"
+            echo "Rendering manifests for $app_name"
+            kustomize build "$dir" --enable-helm > "$dir/rendered-manifests.yaml"
+          done
           git worktree remove ../main-worktree --force
 
-          git add rendered-manifests.yaml
-          git commit -m "Render manifests for ${{ matrix.env }}/grafana" #TODO Render manifests for each application
+          git add .
+          git commit -m "Render manifests for ${{ matrix.env }}"
           git push --set-upstream origin $PREVIEW_BRANCH
           echo "PREVIEW_BRANCH=$PREVIEW_BRANCH" >> $GITHUB_ENV
 
