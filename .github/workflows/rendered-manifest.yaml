@@ -38,9 +38,9 @@ jobs:
 
           git checkout -b "$PREVIEW_BRANCH" origin/main
 
-          kustomize build ${{ matrix.env }}/grafana --enable-helm > /tmp/all.yaml
+          kustomize build ${{ matrix.env }}/grafana --enable-helm > rendered-manifests.yaml
 
-          git add /tmp/all.yaml
+          git add rendered-manifests.yaml
           git commit -m "Render manifests for ${{ matrix.env }}/grafana"
           git push --set-upstream origin $PREVIEW_BRANCH
           echo "PREVIEW_BRANCH=$PREVIEW_BRANCH" >> $GITHUB_ENV
