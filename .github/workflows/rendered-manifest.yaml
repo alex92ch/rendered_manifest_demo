@@ -41,7 +41,7 @@ jobs:
 
           git worktree add ../main-worktree origin/main
 
-          for src_dir in ./main-worktree/${{ matrix.env }}/*/; do
+          for src_dir in ../main-worktree/${{ matrix.env }}/*/; do
             app_name=$(basename "$src_dir")
             target_dir="./${{ matrix.env }}/$app_name"
 
