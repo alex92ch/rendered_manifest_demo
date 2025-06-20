@@ -60,8 +60,6 @@ jobs:
             Please review the changes before merging to deploy to the live environment." \
             --base $LIVE_BRANCH \
             --head $PREVIEW_BRANCH \
-            --label "automated" \
-            --label "manifests" \
-            --label "${{ matrix.env }}"
+
         env:
           GH_TOKEN: ${{ secrets.DEPLOY_PAT }}
