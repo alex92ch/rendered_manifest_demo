@@ -19,16 +19,9 @@ jobs:
           fetch-depth: 0
       - uses: fregante/setup-git-user@v2
 
-      - name: Render manifests
+      - name: Check for live branch
         run: |
-          # Render the manifests
-          kustomize build ${{ matrix.env }}/grafana --enable-helm > /tmp/all.yaml
-
-          # Set variables for branch names
-          LIVE_BRANCH="${{ matrix.env }}/grafana"
-          REVIEW_BRANCH="${{ matrix.env }}/grafana-review-$(date +%Y%m%d-%H%M%S)"
-
-          # Check if live branch exists, create it if not
+          LIVE_BRANCH="live-${{ matrix.env }}/grafana"
           if ! git ls-remote --heads origin $LIVE_BRANCH | grep -q $LIVE_BRANCH; then
             git checkout --orphan $LIVE_BRANCH
             git rm -rf . || true
@@ -37,45 +30,38 @@ jobs:
             git commit -m "Initialize live branch for ${{ matrix.env }}/grafana"
             git push --set-upstream origin $LIVE_BRANCH
           fi
-
-          # Create review branch from live branch
-          git fetch origin $LIVE_BRANCH
-          git checkout -b $REVIEW_BRANCH origin/$LIVE_BRANCH
-
-          # Copy rendered manifests
-          cp /tmp/all.yaml .
-
           echo "LIVE_BRANCH=$LIVE_BRANCH" >> $GITHUB_ENV
-          echo "REVIEW_BRANCH=$REVIEW_BRANCH" >> $GITHUB_ENV
 
-      - name: Check for changes and create PR
+      - name: Render manifests
         run: |
-          if ! git diff --quiet HEAD ; then 
-            # Commit changes to review branch
-            git add .
-            git commit -m "Update manifests: ${{ github.event.head_commit.message }}"
-            git push --set-upstream origin $REVIEW_BRANCH
+          PREVIEW_BRANCH="preview-${{ matrix.env }}/grafana-${GITHUB_RUN_NUMBER}"
+
+          git checkout -b "$PREVIEW_BRANCH" origin/main
+
+          kustomize build ${{ matrix.env }}/grafana --enable-helm > /tmp/all.yaml
+
+          git add /tmp/all.yaml
+          git commit -m "Render manifests for ${{ matrix.env }}/grafana"
+          git push --set-upstream origin $PREVIEW_BRANCH
+          echo "PREVIEW_BRANCH=$PREVIEW_BRANCH" >> $GITHUB_ENV
+
+      - name: Create PR
+        run: |
+
+          gh pr create \
+            --title "Update ${{ matrix.env }}/grafana manifests" \
+            --body "**Automated manifest update**
             
-            # Create pull request using GitHub CLI
-            gh pr create \
-              --title "Update ${{ matrix.env }}/grafana manifests" \
-              --body "**Automated manifest update**
-              
-              This PR contains rendered manifests for ${{ matrix.env }}/grafana environment.
-              
-              **Source commit:** ${{ github.sha }}
-              **Commit message:** ${{ github.event.head_commit.message }}
-              
-              Please review the changes before merging to deploy to the live environment." \
-              --base $LIVE_BRANCH \
-              --head $REVIEW_BRANCH \
-              --label "automated" \
-              --label "manifests" \
-              --label "${{ matrix.env }}"
-          else
-            echo "No changes detected for ${{ matrix.env }}/grafana"
-            # Clean up review branch if no changes
-            git push origin --delete $REVIEW_BRANCH || true
-          fi
+            This PR contains rendered manifests for ${{ matrix.env }}/grafana environment.
+            
+            **Source commit:** ${{ github.sha }}
+            **Commit message:** ${{ github.event.head_commit.message }}
+            
+            Please review the changes before merging to deploy to the live environment." \
+            --base $LIVE_BRANCH \
+            --head $PREVIEW_BRANCH \
+            --label "automated" \
+            --label "manifests" \
+            --label "${{ matrix.env }}"
         env:
           GH_TOKEN: ${{ secrets.DEPLOY_PAT }}
