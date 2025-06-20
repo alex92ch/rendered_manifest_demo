@@ -1,0 +1,537 @@
+apiVersion: v1
+automountServiceAccountToken: false
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana
+  namespace: default
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana-test
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana
+  namespace: default
+rules: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: grafana
+subjects:
+- kind: ServiceAccount
+  name: grafana
+  namespace: default
+---
+apiVersion: v1
+data:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - access: proxy
+      editable: true
+      isDefault: true
+      jsonData:
+        httpHeaderName1: X-Scope-OrgID
+      name: mimir
+      secureJsonData:
+        httpHeaderValue1: default
+      type: prometheus
+      url: http://mimir-query-frontend.monitoring.svc.cluster.local:8080/prometheus
+    - access: proxy
+      editable: true
+      jsonData:
+        derivedFields:
+        - datasourceUid: tempo
+          matcherRegex: trace_id=(\w{16,})
+          name: trace_id
+          url: ${__value.raw}
+        httpHeaderName1: X-Scope-OrgID
+      name: loki
+      secureJsonData:
+        httpHeaderValue1: default
+      type: loki
+      url: http://loki-gateway.monitoring.svc.cluster.local
+    - access: proxy
+      editable: true
+      jsonData:
+        httpHeaderName1: X-Scope-OrgID
+        lokiSearch:
+          datasourceUid: loki
+        nodeGraph:
+          enabled: true
+        search:
+          hide: false
+        tracesToLogsV2:
+          customQuery: true
+          datasourceUid: loki
+          filterBySpanID: false
+          filterByTraceID: true
+          spanEndTimeShift: 1m
+          spanStartTimeShift: 1m
+          tags:
+          - key: trace_id
+      name: tempo
+      secureJsonData:
+        httpHeaderValue1: default
+      type: tempo
+      url: http://tempo-query-frontend.monitoring.svc.cluster.local:3200
+  grafana.ini: |
+    [analytics]
+    check_for_updates = true
+    [grafana_net]
+    url = https://grafana.net
+    [log]
+    mode = console
+    [paths]
+    data = /var/lib/grafana/
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+    provisioning = /etc/grafana/provisioning
+    [security]
+    allow_embedding = true
+    cookie_samesite = none
+    cookie_secure = true
+    [server]
+    domain = ''
+    root_url = https://grafana-monitoring-aws-mgmt-eks.teleport.cr1.fnva.ch
+    serve_from_sub_path = true
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana
+  namespace: default
+---
+apiVersion: v1
+data:
+  run.sh: |-
+    @test "Test Health" {
+      url="http://grafana/api/health"
+
+      code=$(wget --server-response --spider --timeout 90 --tries 10 ${url} 2>&1 | awk '/^  HTTP/{print $2}')
+      [ "$code" == "200" ]
+    }
+kind: ConfigMap
+metadata:
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana-test
+  namespace: default
+---
+apiVersion: v1
+data:
+  loki-app-logs.json: |
+    {
+      "title": "Logs per App (24h)",
+      "timezone": "browser",
+      "refresh": "30s",
+      "schemaVersion": 37,
+      "version": 1,
+      "time": {
+        "from": "now-24h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "type": "logs",
+          "title": "alloy",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"alloy\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "argocd-application-controller",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"argocd-application-controller\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "argocd-applicationset-controller",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"argocd-applicationset-controller\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "argocd-notifications-controller",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"argocd-notifications-controller\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "argocd-repo-server",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"argocd-repo-server\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 16, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "argocd-server",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"argocd-server\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 16, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "aws-ebs-csi-driver",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"aws-ebs-csi-driver\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 24, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "aws-efs-csi-driver",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"aws-efs-csi-driver\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 24, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "aws-load-balancer-controller",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"aws-load-balancer-controller\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "cainjector",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"cainjector\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "cert-manager",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"cert-manager\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 40, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "crossplane",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"crossplane\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 40, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "eks-pod-identity-agent",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"eks-pod-identity-agent\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 48, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "external-secrets",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"external-secrets\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 48, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "external-secrets-cert-controller",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"external-secrets-cert-controller\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 56, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "external-secrets-webhook",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"external-secrets-webhook\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 56, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "grafana",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"grafana\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 64, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "loki",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"loki\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 64, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "mimir",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"mimir\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 72, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "operator",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"operator\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 72, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "rollout-operator",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"rollout-operator\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 80, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "teleport-cluster",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"teleport-cluster\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 80, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "tempo",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"tempo\"}", "refId": "A" }],
+          "gridPos": { "x": 0, "y": 88, "w": 12, "h": 8 }
+        },
+        {
+          "type": "logs",
+          "title": "webhook",
+          "datasource": "loki",
+          "targets": [{ "expr": "{app=\"webhook\"}", "refId": "A" }],
+          "gridPos": { "x": 12, "y": 88, "w": 12, "h": 8 }
+        }
+      ]
+    }
+kind: ConfigMap
+metadata:
+  labels:
+    grafana_dashboard: "1"
+  name: loki-app-logs-dashboard
+  namespace: monitoring
+---
+apiVersion: v1
+data:
+  admin-password: c0ZjejduWEVkRmFsblRRaFBSYmhobmtQYXRiSjdpTWp0bmtwVXdxNw==
+  admin-user: YWRtaW4=
+  ldap-toml: ""
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana
+  namespace: default
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana
+  namespace: default
+spec:
+  ports:
+  - name: service
+    port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana
+  namespace: default
+spec:
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: grafana
+      app.kubernetes.io/name: grafana
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        checksum/config: 0cf56fff04f61a22bba49989249f63edb338254c067076b4d22848e2a43a0db8
+        checksum/sc-dashboard-provider-config: 05412da4ec48730ad234acb0ec35e19c81b3b70394878f59bf410a408a26a827
+        checksum/secret: 52a962350340e7b7be51a1f28e11265257680fafda5c135b3ece9431842cf32b
+        kubectl.kubernetes.io/default-container: grafana
+      labels:
+        app.kubernetes.io/instance: grafana
+        app.kubernetes.io/name: grafana
+        app.kubernetes.io/version: 12.0.0
+        helm.sh/chart: grafana-9.0.0
+    spec:
+      automountServiceAccountToken: true
+      containers:
+      - env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: GF_SECURITY_ADMIN_USER
+          valueFrom:
+            secretKeyRef:
+              key: admin-user
+              name: grafana
+        - name: GF_SECURITY_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: admin-password
+              name: grafana
+        - name: GF_PATHS_DATA
+          value: /var/lib/grafana/
+        - name: GF_PATHS_LOGS
+          value: /var/log/grafana
+        - name: GF_PATHS_PLUGINS
+          value: /var/lib/grafana/plugins
+        - name: GF_PATHS_PROVISIONING
+          value: /etc/grafana/provisioning
+        image: docker.io/grafana/grafana:12.0.0
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 10
+          httpGet:
+            path: /api/health
+            port: 3000
+          initialDelaySeconds: 60
+          timeoutSeconds: 30
+        name: grafana
+        ports:
+        - containerPort: 3000
+          name: grafana
+          protocol: TCP
+        - containerPort: 9094
+          name: gossip-tcp
+          protocol: TCP
+        - containerPort: 9094
+          name: gossip-udp
+          protocol: UDP
+        - containerPort: 6060
+          name: profiling
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /api/health
+            port: 3000
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+        volumeMounts:
+        - mountPath: /etc/grafana/grafana.ini
+          name: config
+          subPath: grafana.ini
+        - mountPath: /var/lib/grafana
+          name: storage
+        - mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
+          name: config
+          subPath: datasources.yaml
+      enableServiceLinks: true
+      securityContext:
+        fsGroup: 472
+        runAsGroup: 472
+        runAsNonRoot: true
+        runAsUser: 472
+      serviceAccountName: grafana
+      shareProcessNamespace: false
+      volumes:
+      - configMap:
+          name: grafana
+        name: config
+      - emptyDir: {}
+        name: storage
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/instance: grafana
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/version: 12.0.0
+    helm.sh/chart: grafana-9.0.0
+  name: grafana-test
+  namespace: default
+spec:
+  containers:
+  - command:
+    - /opt/bats/bin/bats
+    - -t
+    - /tests/run.sh
+    image: docker.io/bats/bats:v1.4.1
+    imagePullPolicy: IfNotPresent
+    name: grafana-test
+    volumeMounts:
+    - mountPath: /tests
+      name: tests
+      readOnly: true
+  restartPolicy: Never
+  serviceAccountName: grafana-test
+  volumes:
+  - configMap:
+      name: grafana-test
+    name: tests
