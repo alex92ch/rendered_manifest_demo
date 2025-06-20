@@ -387,22 +387,6 @@ metadata:
   namespace: monitoring
 ---
 apiVersion: v1
-data:
-  admin-password: aGNXRXRScFJUVFp4NXE0RG1KeVlFUnV3YWg1c1ZYbFB2OXE0ekhjVA==
-  admin-user: YWRtaW4=
-  ldap-toml: ""
-kind: Secret
-metadata:
-  labels:
-    app.kubernetes.io/instance: grafana
-    app.kubernetes.io/name: grafana
-    app.kubernetes.io/version: 12.0.0
-    helm.sh/chart: grafana-9.0.0
-  name: grafana
-  namespace: default
-type: Opaque
----
-apiVersion: v1
 kind: Service
 metadata:
   labels:
@@ -447,7 +431,6 @@ spec:
       annotations:
         checksum/config: 0cf56fff04f61a22bba49989249f63edb338254c067076b4d22848e2a43a0db8
         checksum/sc-dashboard-provider-config: 05412da4ec48730ad234acb0ec35e19c81b3b70394878f59bf410a408a26a827
-        checksum/secret: 92e45cdc65cc664acbba77196840622c065fc0f4061722178acd57dae937fede
         kubectl.kubernetes.io/default-container: grafana
       labels:
         app.kubernetes.io/instance: grafana
