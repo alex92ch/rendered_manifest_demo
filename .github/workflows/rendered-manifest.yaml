@@ -24,10 +24,6 @@ jobs:
           LIVE_BRANCH="live-${{ matrix.env }}/grafana"
           if ! git ls-remote --heads origin $LIVE_BRANCH | grep -q $LIVE_BRANCH; then
             git checkout -b $LIVE_BRANCH
-            git rm -rf . || true
-            echo "# Live manifests for ${{ matrix.env }}/grafana" > README.md
-            git add README.md
-            git commit -m "Initialize live branch for ${{ matrix.env }}/grafana"
             git push --set-upstream origin $LIVE_BRANCH
           fi
           echo "LIVE_BRANCH=$LIVE_BRANCH" >> $GITHUB_ENV
@@ -38,9 +34,9 @@ jobs:
 
           git checkout -b "$PREVIEW_BRANCH" origin/main
 
-          kustomize build ${{ matrix.env }}/grafana --enable-helm > rendered-manifests.yaml
+          kustomize build ${{ matrix.env }}/grafana --enable-helm > ${{ matrix.env }}/grafana/rendered-manifests.yaml
 
-          git add rendered-manifests.yaml
+          git add ${{ matrix.env }}/grafana/rendered-manifests.yaml
           git commit -m "Render manifests for ${{ matrix.env }}/grafana"
           git push --set-upstream origin $PREVIEW_BRANCH
           echo "PREVIEW_BRANCH=$PREVIEW_BRANCH" >> $GITHUB_ENV
