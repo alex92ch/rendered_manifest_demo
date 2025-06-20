@@ -40,12 +40,18 @@ jobs:
           git checkout -b "$PREVIEW_BRANCH" origin/"$LIVE_BRANCH"
 
           git worktree add ../main-worktree origin/main
-          for dir in ./main-worktree/${{ matrix.env }}/*/; do
-            app_name=$(basename "$dir")
-            mkdir -p "$dir"
+
+          for src_dir in ./main-worktree/${{ matrix.env }}/*/; do
+            app_name=$(basename "$src_dir")
+            target_dir="./${{ matrix.env }}/$app_name"
+
             echo "Rendering manifests for $app_name"
-            kustomize build "$dir" --enable-helm > "$dir/rendered-manifests.yaml"
+            mkdir -p "$target_dir"
+            kustomize build "$src_dir" --enable-helm > "$target_dir/rendered-manifests.yaml"
+            cp "$src_dir/application.yaml" "$target_dir/application.yaml"
           done
+
+
           git worktree remove ../main-worktree --force
 
           git add .
