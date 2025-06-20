@@ -36,7 +36,8 @@ jobs:
         run: |
           PREVIEW_BRANCH="preview-${{ matrix.env }}/grafana-${GITHUB_RUN_NUMBER}"
 
-          git checkout -b "$PREVIEW_BRANCH" "$LIVE_BRANCH"
+          git fetch origin $LIVE_BRANCH
+          git checkout -b "$PREVIEW_BRANCH" origin/"$LIVE_BRANCH"
 
           git worktree add ../main-worktree origin/main
           kustomize build ../main-worktree/${{ matrix.env }}/grafana --enable-helm > rendered-manifests.yaml
