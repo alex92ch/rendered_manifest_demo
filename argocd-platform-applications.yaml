@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-platform-applications
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: "https://github.com/alex92ch/rendered_manifest_demo.git"
+    targetRevision: "live/tst"
+    path: "./"
+    directory:
+      recurse: true
+      include: '{**/application.yaml,application.yml,mgmt-cluster-projects.yaml}'
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
