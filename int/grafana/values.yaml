@@ -1,6 +1,6 @@
 sidecar:
   dashboards:
-    enabled: true
+    enabled: false
     SCProvider: true
     label: grafana_dashboard
     labelValue: "1"
