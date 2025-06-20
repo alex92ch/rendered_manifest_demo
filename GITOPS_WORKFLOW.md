@@ -1,4 +1,4 @@
-# GitOps Workflow for Grafana Deployments
+# GitOps Workflow for Grafana Deployment
 
 ## Overview
 
